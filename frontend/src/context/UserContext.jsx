@@ -19,7 +19,7 @@ export const UserProvider = ({ children }) => {
         setLoading(true);
         try {
             console.log('[UserContext] Fetching users from API...');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -59,7 +59,7 @@ export const UserProvider = ({ children }) => {
 
     const addUser = async (newUser) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

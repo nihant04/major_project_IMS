@@ -35,7 +35,7 @@ export const TimetableProvider = ({ children }) => {
 
     // Fetch departments on mount
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/departments', {
+        fetch(`${import.meta.env.VITE_API_URL}/api`, {
             headers: getAuthHeaders()
         })
             .then(res => res.json())
@@ -53,7 +53,7 @@ export const TimetableProvider = ({ children }) => {
 
     // Fetch subjects
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/subjects', {
+        fetch(`${import.meta.env.VITE_API_URL}/api`, {
             headers: getAuthHeaders()
         })
             .then(res => res.json())
@@ -67,7 +67,7 @@ export const TimetableProvider = ({ children }) => {
     // Fetch teachers
     useEffect(() => {
         // Fetch from Teachers table (not Users) - includes user data
-        fetch(`${import.meta.env.VITE_API_URL}/api/teachers', {
+        fetch(`${import.meta.env.VITE_API_URL}/api`, {
             headers: getAuthHeaders()
         })
             .then(res => res.json())
@@ -135,7 +135,7 @@ export const TimetableProvider = ({ children }) => {
                 [startTime, endTime] = newSlot.time.split(' - ');
             }
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/timetable', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
