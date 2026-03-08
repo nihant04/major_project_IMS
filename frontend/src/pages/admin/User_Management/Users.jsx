@@ -214,7 +214,7 @@ const UsersPage = () => {
                     >
                         <option value="all">All Departments</option>
                         <option value="Computer Science">Computer Science</option>
-                        <option value="Information Tech">Information Technology</option>
+                        <option value="Information Technology">Information Technology</option>
                         <option value="Electronics">Electronics</option>
                         <option value="Electrical">Electrical</option>
                         <option value="Mechanical">Mechanical</option>
