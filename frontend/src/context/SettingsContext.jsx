@@ -102,13 +102,20 @@ export const SettingsProvider = ({ children }) => {
     // Update Profile (Persists to User table)
     const updateProfile = async (data) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
+            const isFormData = data instanceof FormData;
+            const headers = {
+                Authorization: `Bearer ${token}`
+            };
+
+            // Don't set Content-Type for FormData, browser will do it with boundary
+            if (!isFormData) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
+                headers: headers,
+                body: isFormData ? data : JSON.stringify({
                     name: data.name,
                     email: data.email,
                     phone: data.phone,
@@ -118,10 +125,19 @@ export const SettingsProvider = ({ children }) => {
 
             if (response.ok) {
                 const result = await response.json();
-                setProfile(prev => ({ ...prev, ...data }));
+                // Update local status with the user object returned from server
+                if (result.user) {
+                    setProfile(prev => ({
+                        ...prev,
+                        ...result.user
+                    }));
+                } else {
+                    setProfile(prev => ({ ...prev, ...data }));
+                }
                 return { success: true, message: 'Profile updated successfully' };
             }
-            return { success: false, message: 'Failed to update profile' };
+            const errorData = await response.json();
+            return { success: false, message: errorData.message || 'Failed to update profile' };
         } catch (error) {
             console.error('Error updating profile:', error);
             return { success: false, message: error.message };

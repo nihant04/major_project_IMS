@@ -304,6 +304,12 @@ export const updateUserProfile = async (req, res) => {
         user.dob = dob || user.dob;
         user.gender = gender || user.gender;
 
+        // Handle Avatar Upload
+        if (req.file) {
+            // Store the relative path to the image
+            user.avatar = `/${req.file.path.replace(/\\/g, '/')}`;
+        }
+
         await user.save();
 
         res.json({

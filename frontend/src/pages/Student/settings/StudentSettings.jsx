@@ -9,12 +9,20 @@ import { useSettings } from '../../../context/SettingsContext';
 
 const StudentSettings = () => {
     const [activeTab, setActiveTab] = useState('profile');
-    const [profile, setProfile] = useState(studentProfileData);
-    const { theme, setTheme } = useSettings(); // Use global theme
+    const { profile, updateProfile, theme, setTheme } = useSettings();
+    const [formData, setFormData] = useState(profile);
     const [isEditing, setIsEditing] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const fileInputRef = React.useRef(null);
 
     // Mock notification state
-    const [notifications, setNotifications] = useState(studentProfileData.preferences);
+    const [notifications, setNotifications] = useState({
+        emails: true,
+        alerts: true,
+        news: true
+    });
 
     const tabs = [
         { id: 'profile', label: 'My Profile', icon: <User size={20} /> },
@@ -23,10 +31,42 @@ const StudentSettings = () => {
         { id: 'preferences', label: 'App Preferences', icon: <Moon size={20} /> },
     ];
 
-    const handleSaveProfile = (e) => {
+    React.useEffect(() => {
+        setFormData(profile);
+        if (profile.avatar) {
+            const avatarUrl = profile.avatar.startsWith('http')
+                ? profile.avatar
+                : `${import.meta.env.VITE_API_URL}${profile.avatar}`;
+            setPreviewUrl(avatarUrl);
+        }
+    }, [profile]);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSaveProfile = async (e) => {
         e.preventDefault();
-        setIsEditing(false);
-        // In a real app, API call here
+        setLoading(true);
+
+        const data = new FormData();
+        data.append('name', formData.name);
+        data.append('email', formData.email);
+        data.append('phone', formData.phone);
+        data.append('address', formData.address);
+        if (selectedFile) {
+            data.append('avatar', selectedFile);
+        }
+
+        const result = await updateProfile(data);
+        setLoading(false);
+        if (result.success) {
+            setIsEditing(false);
+        }
     };
 
     const renderContent = () => {
@@ -36,19 +76,35 @@ const StudentSettings = () => {
                     <div className="space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="relative">
-                                <img
-                                    src={profile.avatar}
-                                    alt="Profile"
-                                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-gray-100"
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    className="hidden"
                                 />
-                                <button className="absolute bottom-0 right-0 p-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition space-x-0">
-                                    <Camera size={16} />
-                                </button>
+                                <div
+                                    onClick={() => isEditing && fileInputRef.current.click()}
+                                    className={`w-24 h-24 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center overflow-hidden ${isEditing ? 'cursor-pointer' : ''}`}
+                                >
+                                    {previewUrl ? (
+                                        <img src={previewUrl} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={40} className="text-gray-400" />
+                                    )}
+                                </div>
+                                {isEditing && (
+                                    <button
+                                        onClick={() => fileInputRef.current.click()}
+                                        className="absolute bottom-0 right-0 p-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition space-x-0"
+                                    >
+                                        <Camera size={16} />
+                                    </button>
+                                )}
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
-                                <p className="text-gray-500">{profile.program} • {profile.semester}</p>
-                                <p className="text-xs text-gray-400 font-mono mt-1">ID: {profile.id}</p>
+                                <h2 className="text-2xl font-bold text-gray-900">{formData.name}</h2>
+                                <p className="text-gray-500">{profile.role || 'Student'}</p>
                             </div>
                         </div>
 
@@ -70,9 +126,9 @@ const StudentSettings = () => {
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                         <input
                                             type="text"
-                                            value={profile.name}
+                                            value={formData.name}
                                             disabled={!isEditing}
-                                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 outline-none"
                                         />
                                     </div>
@@ -83,9 +139,9 @@ const StudentSettings = () => {
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                         <input
                                             type="email"
-                                            value={profile.email}
+                                            value={formData.email}
                                             disabled={!isEditing}
-                                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 outline-none"
                                         />
                                     </div>
@@ -96,9 +152,9 @@ const StudentSettings = () => {
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                         <input
                                             type="tel"
-                                            value={profile.phone}
+                                            value={formData.phone}
                                             disabled={!isEditing}
-                                            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 outline-none"
                                         />
                                     </div>
@@ -108,9 +164,9 @@ const StudentSettings = () => {
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                                         <textarea
-                                            value={profile.address}
+                                            value={formData.address}
                                             disabled={!isEditing}
-                                            onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                             rows="1"
                                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500 outline-none resize-none"
                                         />
@@ -119,7 +175,12 @@ const StudentSettings = () => {
 
                                 {isEditing && (
                                     <div className="md:col-span-2 flex justify-end">
-                                        <button type="submit" className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition">
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                                             Save Changes
                                         </button>
                                     </div>

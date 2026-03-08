@@ -6,17 +6,45 @@ import { useSettings } from '../../../../context/SettingsContext';
 const ProfileSettings = () => {
     const { profile, updateProfile } = useSettings();
     const [formData, setFormData] = useState(profile);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null);
+    const fileInputRef = React.useRef(null);
 
     useEffect(() => {
         setFormData(profile);
+        if (profile.avatar) {
+            // Ensure avatar URL is correct (handles both full URLs and relative paths)
+            const avatarUrl = profile.avatar.startsWith('http')
+                ? profile.avatar
+                : `${import.meta.env.VITE_API_URL}${profile.avatar}`;
+            setPreviewUrl(avatarUrl);
+        }
     }, [profile]);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const result = await updateProfile(formData);
+
+        const data = new FormData();
+        data.append('name', formData.name);
+        data.append('email', formData.email);
+        data.append('phone', formData.phone);
+        data.append('department', formData.department);
+        if (selectedFile) {
+            data.append('avatar', selectedFile);
+        }
+
+        const result = await updateProfile(data);
         setLoading(false);
         if (result.success) {
             setStatus('success');
@@ -44,11 +72,21 @@ const ProfileSettings = () => {
                 {/* Avatar Section */}
                 <div className="bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-100 flex flex-col md:flex-row items-center gap-8">
                     <div className="relative group">
-                        <div className="w-32 h-32 rounded-[2.5rem] bg-white shadow-2xl shadow-blue-900/10 border-4 border-white flex items-center justify-center text-4xl font-black text-blue-600 overflow-hidden">
-                            {formData.avatar ? (
-                                <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="image/*"
+                            className="hidden"
+                        />
+                        <div
+                            onClick={() => fileInputRef.current.click()}
+                            className="w-32 h-32 rounded-[2.5rem] bg-white shadow-2xl shadow-blue-900/10 border-4 border-white flex items-center justify-center text-4xl font-black text-blue-600 overflow-hidden cursor-pointer"
+                        >
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                formData.name.charAt(0)
+                                formData.name?.charAt(0) || '?'
                             )}
                             <div className="absolute inset-0 bg-blue-600/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                                 <Camera className="text-white" size={32} />
@@ -58,6 +96,7 @@ const ProfileSettings = () => {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             type="button"
+                            onClick={() => fileInputRef.current.click()}
                             className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200"
                         >
                             <Camera size={18} />
@@ -67,8 +106,23 @@ const ProfileSettings = () => {
                         <h3 className="text-lg font-black text-gray-900">Main Identity Image</h3>
                         <p className="text-xs font-bold text-gray-400 mt-1 tracking-wide">Recommended size: 800x800px. JPG or PNG.</p>
                         <div className="mt-4 flex gap-2">
-                            <button type="button" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 transition-all">Upload New</button>
-                            <button type="button" className="px-4 py-2 bg-transparent text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition-all">Remove</button>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current.click()}
+                                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 transition-all font-bold"
+                            >
+                                Upload New
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedFile(null);
+                                    setPreviewUrl(null);
+                                }}
+                                className="px-4 py-2 bg-transparent text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold"
+                            >
+                                Remove
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -151,7 +205,7 @@ const ProfileSettings = () => {
                     </AnimatePresence>
 
                     <div className="flex gap-4">
-                        <button type="button" className="px-8 py-4 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors">Discard</button>
+                        <button type="button" onClick={() => setFormData(profile)} className="px-8 py-4 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors">Discard</button>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}

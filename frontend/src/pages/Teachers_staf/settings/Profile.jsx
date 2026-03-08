@@ -1,28 +1,42 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, Building } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useSettings } from '../../../context/SettingsContext';
 
 const Profile = () => {
+    const { profile: contextProfile, updateProfile } = useSettings();
     const [isEditing, setIsEditing] = useState(false);
-    const [profileImage, setProfileImage] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: 'Dr. Sarah Wilson',
-        role: 'Senior Professor',
-        email: 'sarah.wilson@nit.edu.in',
-        phone: '+91 98765 12345',
-        department: 'Computer Science',
-        location: 'Nagpur, Maharashtra',
-        bio: 'Passionate educator with 10+ years of experience in teaching Data Structures and Algorithms. Committed to student success.'
+        fullName: contextProfile.name || '',
+        email: contextProfile.email || '',
+        phone: contextProfile.phone || '',
+        department: contextProfile.department || '',
+        location: contextProfile.location || '',
+        bio: contextProfile.bio || ''
     });
+
+    React.useEffect(() => {
+        setFormData({
+            fullName: contextProfile.name || '',
+            email: contextProfile.email || '',
+            phone: contextProfile.phone || '',
+            department: contextProfile.department || '',
+            location: contextProfile.location || '',
+            bio: contextProfile.bio || ''
+        });
+        if (contextProfile.avatar) {
+            const avatarUrl = contextProfile.avatar.startsWith('http')
+                ? contextProfile.avatar
+                : `${import.meta.env.VITE_API_URL}${contextProfile.avatar}`;
+            setPreviewUrl(avatarUrl);
+        }
+    }, [contextProfile]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfileImage(reader.result);
-            };
-            reader.readAsDataURL(file);
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
         }
     };
 
@@ -34,12 +48,29 @@ const Profile = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setIsEditing(false);
-        // Here you would typically make an API call to update the profile
-        console.log('Profile updated:', formData);
-        toast.success("Profile updated successfully");
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        setLoading(true);
+
+        const data = new FormData();
+        data.append('name', formData.fullName);
+        data.append('email', formData.email);
+        data.append('phone', formData.phone);
+        data.append('department', formData.department);
+        // data.append('location', formData.location); // These might not be in User model yet but good to send if handled
+        // data.append('bio', formData.bio);
+        if (selectedFile) {
+            data.append('avatar', selectedFile);
+        }
+
+        const result = await updateProfile(data);
+        setLoading(false);
+        if (result.success) {
+            setIsEditing(false);
+            toast.success("Profile updated successfully");
+        } else {
+            toast.error(result.message || "Failed to update profile");
+        }
     };
 
     return (
@@ -73,8 +104,8 @@ const Profile = () => {
                 <div className="md:col-span-1 flex flex-col items-center">
                     <div className="relative mb-4 group">
                         <div className="w-40 h-40 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-100 flex items-center justify-center relative z-10">
-                            {profileImage ? (
-                                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
                                 <User size={64} className="text-gray-400" />
                             )}
@@ -87,7 +118,7 @@ const Profile = () => {
                         )}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">{formData.fullName}</h3>
-                    <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full mt-2">{formData.role}</span>
+                    <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full mt-2">{contextProfile.role || 'Staff'}</span>
                 </div>
 
                 {/* Right Column - Form */}
