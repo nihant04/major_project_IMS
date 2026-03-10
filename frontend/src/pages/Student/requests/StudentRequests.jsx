@@ -53,7 +53,8 @@ const StudentRequests = () => {
                     role: 'student',
                     type: newRequest.type,
                     subject: newRequest.purpose,
-                    description: newRequest.description
+                    description: newRequest.description,
+                    department: newRequest.department
                 })
             });
 

@@ -4,7 +4,7 @@ import User from '../models/User.js';
 // Create Request
 export const createRequest = async (req, res) => {
     try {
-        const { userId, role, type, subject, description } = req.body;
+        const { userId, role, type, subject, description, department } = req.body;
 
         if (!userId || !role || !type || !subject || !description) {
             return res.status(400).json({ message: 'All fields are required' });
@@ -16,6 +16,7 @@ export const createRequest = async (req, res) => {
             type,
             subject,
             description,
+            department,
             status: 'Pending'
         });
 

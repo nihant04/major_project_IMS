@@ -16,6 +16,7 @@ import Mark from './models/Mark.js';
 import FeeStructure from './models/FeeStructure.js';
 import FeePayment from './models/FeePayment.js';
 import Discount from './models/Discount.js';
+import Request from './models/Request.js';
 
 // Import Routes
 import authRoutes from './routes/authRoutes.js';

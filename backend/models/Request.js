@@ -32,6 +32,10 @@ const Request = sequelize.define('Request', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    department: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     status: {
         type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
         defaultValue: 'Pending',
